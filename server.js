@@ -16,13 +16,14 @@ const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 const history = require("connect-history-api-fallback");
-const multer = require("multer");
-const GridFsStorage = require("multer-gridfs-storage");
-const methodOverride = require("method-override");
+const multer = require("multer"); // Image Uploader
+const GridFsStorage = require("multer-gridfs-storage"); // Image Storage Mapping
+const methodOverride = require("method-override"); // Remove Image Functionality
 
 // Program Logic
 const AppError = require("./utils/appError");
 const projectRouter = require("./routes/projectRoutes");
+const imageRouter = require("./routes/imageRoutes");
 
 // Limiter for IP Requests
 const limiter = rateLimit({
@@ -38,20 +39,49 @@ app.use(helmet()); // HTTP Security Headers
 let port = process.env.PORT || 6969;
 if (port === null || port === "") port = 6969;
 const database = process.env.MONGODB_URI;
-mongoose
-	.connect(database, { useNewUrlParser: true, useUnifiedTopology: true })
-	.then((connection) => {
-		console.log(`DB connection successful`);
+const connect = mongoose.createConnection(database, {
+	useNewUrlParser: true,
+	useUnifiedTopology: true,
+});
+let gfs; // Grid File System
+connect.once("open", () => {
+	// init stream
+	gfs = new mongoose.mongo.GridFSBucket(connect.db, {
+		bucketName: "uploads",
 	});
+});
 app.use(express.json({ limit: "10kb" })); // Limit Incoming Requests Data
 app.use(mongoSanitize()); // Data Sanitization Against NoSQL Query Injection
 app.use(xss()); // Data Sanitation Against XXS
 app.use(cors()); // Open API Communication
 
+// Image Database Functionality
+const storage = new GridFsStorage({
+	url: process.env.MONGODB_URI,
+	file: (req, file) => {
+		return new Promise((resolve, reject) => {
+			crypto.randomBytes(16, (err, buf) => {
+				if (err) {
+					return reject(err);
+				}
+				const filename =
+					buf.toString("hex") + path.extname(file.originalname);
+				const fileInto = {
+					filename: filename,
+					bucketName: "uploads",
+				};
+				resolve(fileInfo);
+			});
+		});
+	},
+});
+const upload = multer({ storage });
+
 // Routing
 app.use("/api/v1/projects", projectRouter);
+app.use("/api/v1/images", imageRouter);
 
 // Server Uplink
 const server = app.listen(port, () =>
-	console.log(`Server started on port: ${port}...`)
+	console.log(`Server started on port: ${port}... \n`)
 );
