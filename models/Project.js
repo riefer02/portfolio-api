@@ -18,9 +18,6 @@ const projectSchema = new mongoose.Schema(
 			type: Array,
 			required: [true, "Add One or More Tags"],
 		},
-		rating: {
-			type: Number,
-		},
 		knowledges: {
 			type: Array,
 			required: [true, "Add One or More Skills/Knowledges"],

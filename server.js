@@ -24,6 +24,7 @@ const methodOverride = require("method-override"); // Remove Image Functionality
 const AppError = require("./utils/appError");
 const projectRouter = require("./routes/projectRoutes");
 const imageRouter = require("./routes/imageRoutes");
+const testRouter = require("./routes/testRoutes");
 
 // Limiter for IP Requests
 const limiter = rateLimit({
@@ -50,7 +51,7 @@ connect.once("open", () => {
 		bucketName: "uploads",
 	});
 });
-app.use(express.json({ limit: "10kb" })); // Limit Incoming Requests Data
+app.use(express.json({ limit: "10mb" })); // Limit Incoming Requests Data
 app.use(mongoSanitize()); // Data Sanitization Against NoSQL Query Injection
 app.use(xss()); // Data Sanitation Against XXS
 app.use(cors()); // Open API Communication
@@ -80,6 +81,7 @@ const upload = multer({ storage });
 // Routing
 app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/images", imageRouter);
+app.use("/api/v1/test", testRouter);
 
 // Server Uplink
 const server = app.listen(port, () =>
